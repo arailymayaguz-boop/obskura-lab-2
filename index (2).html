@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="kk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OBSCURA LAB</title>
+<style>
+:root{--panel:#121d31;--line:#263754;--text:#edf4ff;--muted:#a9bad3;--accent:#66d9c2}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0%,#1a3150,#0b1220 55%);color:var(--text);font:16px/1.5 system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:28px 18px 50px}.top{display:flex;align-items:center;gap:14px}.logo{font-size:34px}
+.eyebrow{color:var(--accent);font-weight:700;letter-spacing:.12em;font-size:12px}h1{font-size:clamp(30px,5vw,48px);margin:0}h2{margin:0 0 12px;font-size:20px}
+.intro{color:var(--muted);margin:8px 0 24px}.layout{display:grid;grid-template-columns:290px 1fr;gap:18px}
+.panel,.stage,.stats{background:rgba(18,29,49,.95);border:1px solid var(--line);border-radius:18px;padding:20px}
+.control{margin:20px 0}.control label{display:flex;justify-content:space-between;gap:10px;font-weight:650}.value{color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent);margin-top:12px;cursor:pointer}.hint{color:var(--muted);font-size:13px}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:14px}.view{background:#f5f7fb;border-radius:14px;padding:12px;color:#26344a;min-width:0}
+.view strong{display:block;margin-bottom:8px;font-size:14px}canvas{display:block;width:100%;height:auto;border-radius:8px;background:white}
+.stats{margin-top:18px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}.metric{background:#0d1728;border:1px solid var(--line);border-radius:12px;padding:14px}
+.metric span{display:block;color:var(--muted);font-size:13px}.metric b{font-size:24px;color:var(--accent)}
+.notice{margin-top:16px;color:#d7e5f5;background:#172a40;border-left:3px solid #f3b45b;padding:12px 14px;border-radius:8px;font-size:13px}
+.readout{color:var(--muted);font-size:13px;margin-top:12px}footer{color:var(--muted);font-size:12px;margin-top:22px;text-align:center}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.views{grid-template-columns:1fr}}
+</style></head><body><main>
+<div class="top"><div class="logo">🔬</div><div><div class="eyebrow">ВИРТУАЛДЫ ЗЕРТХАНА</div><h1>OBSCURA LAB</h1></div></div>
+<p class="intro">Камера обскураның жұмысын зертте: саңылау диаметрі мен камера ұзындығын өзгертіп, кескіннің қалай өзгеретінін бақыла.</p>
+<div class="layout"><aside class="panel"><h2>Камера параметрлері</h2>
+<div class="control"><label for="diameter">Саңылау диаметрі <span class="value" id="dval">0.5 мм</span></label><input id="diameter" type="range" min="0.3" max="1.0" step="0.1" value="0.5"><p class="hint">Диаметр үлкейген сайын модельдегі бұлыңғырлық артады, жарықтық өзгереді.</p></div>
+<div class="control"><label for="length">Камера ұзындығы <span class="value" id="vval">40 мм</span></label><input id="length" type="range" min="20" max="50" step="5" value="40"><p class="hint">Ұзындық өзгергенде кескіннің масштабы өзгереді.</p></div>
+<div class="notice">Бұл — оқу мақсатындағы жуық визуалды модель. Нақты оптикалық тәжірибені толық қайталамайды.</div><div class="readout" id="status" aria-live="polite"></div></aside>
+<section><div class="stage"><h2>Кескінді салыстыру</h2><div class="views">
+<div class="view"><strong>Бастапқы нысан</strong><canvas id="source" width="400" height="300"></canvas></div>
+<div class="view"><strong>Камера экранындағы кескін</strong><canvas id="image" width="400" height="300"></canvas></div>
+</div></div><div class="stats"><h2>Таңдалған параметрлер</h2><div class="metrics">
+<div class="metric"><span>Саңылау диаметрі</span><b id="dm">0.5 мм</b></div><div class="metric"><span>Камера ұзындығы</span><b id="vm">40 мм</b></div>
+</div></div></section></div><footer>OBSCURA LAB · Физиканы тәжірибе арқылы үйрен</footer></main>
+<script>
+(() => {
+const source=document.getElementById('source'), output=document.getElementById('image');
+const s=source.getContext('2d'), o=output.getContext('2d');
+const diameter=document.getElementById('diameter'), length=document.getElementById('length');
+function drawScene(){
+s.fillStyle='#fff';s.fillRect(0,0,400,300);
+s.fillStyle='orange';s.beginPath();s.arc(330,60,30,0,Math.PI*2);s.fill();
+s.fillStyle='#2878d0';s.fillRect(130,140,140,140);
+s.fillStyle='#e34b4b';s.beginPath();s.moveTo(110,145);s.lineTo(200,40);s.lineTo(290,145);s.closePath();s.fill();
+s.fillStyle='#ffe16a';s.fillRect(160,170,35,40);s.fillRect(215,170,35,40);
+}
+function update(){
+const d=Number(diameter.value),v=Number(length.value),scale=v/40;
+document.getElementById('dval').textContent=d.toFixed(1)+' мм';
+document.getElementById('vval').textContent=v+' мм';
+document.getElementById('dm').textContent=d.toFixed(1)+' мм';
+document.getElementById('vm').textContent=v+' мм';
+const blur=(d-.3)*5,brightness=Math.min(2,Math.pow(.5/d,2));
+o.save();o.clearRect(0,0,400,300);o.fillStyle='#fff';o.fillRect(0,0,400,300);
+o.translate(200,150);o.rotate(Math.PI);o.filter=`blur(${blur}px)`;
+o.drawImage(source,-200*scale,-150*scale,400*scale,300*scale);o.restore();
+const frame=o.getImageData(0,0,400,300),p=frame.data;
+for(let i=0;i<p.length;i+=4){p[i]=Math.min(255,p[i]*brightness);p[i+1]=Math.min(255,p[i+1]*brightness);p[i+2]=Math.min(255,p[i+2]*brightness);}
+o.putImageData(frame,0,0);
+document.getElementById('status').textContent=`Бұлыңғырлық: ${blur.toFixed(1)} px · Жарықтық: ${Math.round(brightness*100)}% · Масштаб: ${Math.round(scale*100)}%`;
+}
+drawScene();diameter.addEventListener('input',update);length.addEventListener('input',update);update();
+})();
+</script></body></html>
